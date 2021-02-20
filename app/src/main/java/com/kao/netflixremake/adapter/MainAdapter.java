@@ -7,10 +7,12 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.kao.netflixremake.MainActivity;
 import com.kao.netflixremake.R;
 import com.kao.netflixremake.model.Category;
 import com.kao.netflixremake.model.Movie;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -52,6 +54,11 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.CategoryHolder
     @Override
     public int getItemCount() {
         return categories == null ? 0 : categories.size();
+    }
+
+    public void setCategories(List<Category> categories) {
+        this.categories.clear();
+        this.categories.addAll(categories);
     }
 
     public static class CategoryHolder extends RecyclerView.ViewHolder {

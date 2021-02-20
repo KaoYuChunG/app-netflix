@@ -8,13 +8,14 @@ import android.os.Bundle;
 
 import com.kao.netflixremake.adapter.MainAdapter;
 import com.kao.netflixremake.model.Category;
-import com.kao.netflixremake.model.Movie;
-import com.kao.netflixremake.util.JsonDownloadTask;
+import com.kao.netflixremake.util.CategoryTask;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements  CategoryTask.CategoryLoader{
+
+    private MainAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,29 +24,21 @@ public class MainActivity extends AppCompatActivity {
 
         RecyclerView recyclerView = findViewById(R.id.recycler_view_main);
 
-
-        //monta listas de category e movies
-        List<Category> categories = new ArrayList<>();
-        for (int i =0 ; i < 30 ; i++) {
-            Category category = new Category();
-            category.setName("cat" + i);
-
-            List<Movie> movies = new ArrayList<>();
-            for (int j =0 ; j < 30 ; j++) {
-                Movie movie = new Movie();
-//                movie.setCoverUrl(R.drawable.movie);
-                movies.add(movie);
-            }
-
-            category.setMovies(movies);
-            categories.add(category);
-        }
-        MainAdapter adapter = new MainAdapter(categories, this);
+        adapter = new MainAdapter(new ArrayList<Category>(), this);
         recyclerView.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));
         recyclerView.setAdapter(adapter);
 
-        new JsonDownloadTask(this).execute("https://tiagoaguiar.co/api/netflix/home");
+        CategoryTask categoryTask = new CategoryTask(this);
+        //esse que faz relacao ao mainActivity
+        categoryTask.setCategoryLoader(this);
+        categoryTask.execute("https://tiagoaguiar.co/api/netflix/home");
     }
 
 
+    @Override
+    public void onResult(List<Category> categories) {
+        //envolve tres partes, categoryTask , mainActivity, MainAdapter
+        adapter.setCategories(categories);
+        adapter.notifyDataSetChanged();
+    }
 }

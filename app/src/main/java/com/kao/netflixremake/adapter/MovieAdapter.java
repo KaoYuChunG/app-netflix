@@ -1,27 +1,45 @@
 package com.kao.netflixremake.adapter;
 
+import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.kao.netflixremake.MovieActivity;
 import com.kao.netflixremake.R;
-import com.kao.netflixremake.model.Category;
 import com.kao.netflixremake.model.Movie;
+import com.kao.netflixremake.util.ImageDownloadTask;
 
 import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieHolder>{
+public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieHolder> implements OnItemClickListener {
 
-    private final List<Movie> movies;
+    private List<Movie> movies;
     private int layout;
 
     public MovieAdapter(List<Movie> movies, int layout) {
         this.movies = movies;
         this.layout = layout;
+    }
+
+    public void setMovies(List<Movie> movies) {
+        this.movies.clear();
+        this.movies.addAll(movies);
+    }
+
+    @Override
+    public void onClick(int position, final Context context) {
+        int id = movies.get(position).getId();
+        if ( id <= 3) {
+            Intent intent = new Intent(context, MovieActivity.class);
+            intent.putExtra("id", id);
+            context.startActivity(intent);
+        }
     }
 
     @NonNull
@@ -30,13 +48,14 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieHolder>
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(layout, parent, false);
 
-        return new MovieHolder(view);
+        //segundo parametro vai relaciona  onClick(int position)
+        return new MovieHolder(view, this, parent.getContext());
     }
 
     @Override
     public void onBindViewHolder(@NonNull MovieHolder holder, int position) {
         Movie movie = movies.get(position);
-//        holder.imageView.setImageResource(movie.getCoverUrl());
+        new ImageDownloadTask(holder.imageView).execute(movie.getCoverUrl());
     }
 
     @Override
@@ -44,13 +63,22 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieHolder>
         return movies == null ? 0 : movies.size();
     }
 
+
     public static class MovieHolder extends RecyclerView.ViewHolder {
         private final ImageView imageView;
 
-        public MovieHolder (View view) {
+        public MovieHolder (View view, final OnItemClickListener onItemClickListener, final Context context) {
             super(view);
 
             imageView = (ImageView) view.findViewById(R.id.image_view_cover);
+
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    //identifica qual item foi clicado
+                    onItemClickListener.onClick(getAdapterPosition(), context);
+                }
+            });
         }
 
     }

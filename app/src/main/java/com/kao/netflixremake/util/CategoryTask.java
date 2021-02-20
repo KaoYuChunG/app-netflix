@@ -16,6 +16,7 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -23,19 +24,27 @@ import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class JsonDownloadTask extends AsyncTask<String , Void, List<Category>> {
+public class CategoryTask extends AsyncTask<String , Void, List<Category>> {
+//  faz com que context fica fraca, assim quando activity for destruido nao da problema
+    private final WeakReference<Context> context;
+    private ProgressDialog dialog;
+    private CategoryLoader categoryLoader;
 
-    private final Context context;
-    ProgressDialog dialog;
+    public CategoryTask(Context context) {
+        this.context = new  WeakReference<Context>(context);
+    }
 
-    public JsonDownloadTask(Context context) {
-        this.context = context;
+    public void setCategoryLoader(CategoryLoader categoryLoader) {
+        this.categoryLoader = categoryLoader;
     }
 
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
-        dialog = ProgressDialog.show(context, "Carregando", "", true);
+        Context context = this.context.get();
+
+        if(context != null)
+            dialog = ProgressDialog.show(context, "Carregando", "", true);
     }
 
     @Override
@@ -59,7 +68,7 @@ public class JsonDownloadTask extends AsyncTask<String , Void, List<Category>> {
             BufferedInputStream in = new BufferedInputStream(inputStream);
 
             String jsonArray = toString(in);
-            Log.i("TESTE", jsonArray);
+            Log.i("TESTE", "jsonArray" + jsonArray);
 
             List<Category> categories = getCategories(new JSONObject(jsonArray));
             in.close();
@@ -80,18 +89,23 @@ public class JsonDownloadTask extends AsyncTask<String , Void, List<Category>> {
         List<Category> categories = new ArrayList<>();
 
         JSONArray categotyArray = json.getJSONArray("category");
+
         for(int i = 0 ; i < categotyArray.length(); i++) {
+
             JSONObject category = categotyArray.getJSONObject(i);
             String title = category.getString("title");
 
             List<Movie> movies = new ArrayList<>();
-            JSONArray movieArray = json.getJSONArray("movie");
+            JSONArray movieArray = category.getJSONArray("movie");
+            Log.i("TESTE", "movieArray" + movieArray);
             for(int j = 0 ; j < movieArray.length(); j++) {
-                JSONObject movie = movieArray.getJSONObject(i);
-                String coverUrl = movie.getString("cover_url");
 
+                JSONObject movie = movieArray.getJSONObject(j);
+                String coverUrl = movie.getString("cover_url");
+                int id = movie.getInt("id");
                 Movie movieObj = new Movie();
                 movieObj.setCoverUrl(coverUrl);
+                movieObj.setId(id);
                 movies.add(movieObj);
             }
 
@@ -104,12 +118,13 @@ public class JsonDownloadTask extends AsyncTask<String , Void, List<Category>> {
         return categories;
     }
 
+    //converte para json
     private String toString(BufferedInputStream is) throws IOException {
         byte[] bytes = new byte[1024];
         ByteArrayOutputStream boas = new ByteArrayOutputStream();
         int lidos;
         while((lidos = is.read(bytes)) > 0 ) {
-            boas.write(bytes, 0,lidos);
+            boas.write(bytes,0,lidos);
         }
         return new String(boas.toByteArray());
     }
@@ -117,6 +132,16 @@ public class JsonDownloadTask extends AsyncTask<String , Void, List<Category>> {
     @Override
     protected void onPostExecute(List<Category> categories) {
         super.onPostExecute(categories);
+        Log.d("TESTE", "categories" + categories);
         dialog.dismiss();
+
+//        aqui que passa resultado do request para recycler view
+        if(categoryLoader != null) {
+            categoryLoader.onResult(categories);
+        }
+    }
+
+    public interface CategoryLoader {
+        void onResult(List<Category> categories);
     }
 }
