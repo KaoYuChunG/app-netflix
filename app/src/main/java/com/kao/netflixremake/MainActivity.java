@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements  CategoryTask.CategoryLoader{
-
+    private static final String LOG_TAG = "MainActivity";
     private MainAdapter adapter;
 
     @Override
